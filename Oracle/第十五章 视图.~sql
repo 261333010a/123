@@ -1,0 +1,99 @@
+---------------------------------------第十五章
+为什么要学视图（视图的作用）
+1.安全：隔离app对表的直接访问 app---table   app---view---table
+2.快捷：有的查询需求，数据来自很多张表，可以提前八很多张表放在一个视图中，那么查询视图即可
+3.数据屏蔽：有时候需要屏蔽数据，或者加工数据，比如领导希望看到统计报表
+            员工希望看到本人当月的工资等，可以使用视图对数据进行加工
+            
+创建视图
+create view viewName[(columnName1,columnName2...)]
+      as (子查询)---子查询中的列数和列的顺序和视图中的列一致
+      
+---写法一
+create view emp_view1 (empno_v,ename_v)----创建后的视图的名字为新名字
+       as (select empno,ename from emp)
+       
+---写法二
+create view emp_view2---创建后的视图的名字不变
+       as (select empno,ename from emp where deptno = 10)
+       
+       
+修改视图
+create or replace view viewName[(columnName1,columnName2...)]
+      as (子查询)
+      
+
+---with check option(带约束视图)
+create or replace view viewName[(columnName1,columnName2...)]
+      as (子查询 where conditions)
+      with check option;----由conditions决定视图里的数据内容，不符合的不能加
+                        ----也只能删除符合的数据
+
+
+---with read only (只读视图不能修改) 拒绝dml数据表操作
+
+删除视图
+drop view viewName
+
+--------练习一
+1.创建一个视图，通过该视图可以查询到工资在2000-5000内并且
+姓名中包含有A的员工编号，姓名，工资。
+create view v_emp_01 (v_empno,v_ename,e_sal)
+       as (select empno,ename,sal
+           from emp where sal between 2000 and 5000 and ename like '%A%')
+
+2.通过上述创建的视图查询数据
+select * from v_emp_01
+--------练习二
+1.创建一个视图，通过该视图可以查询到工作在NEW YORK和CHICAGO的员工编号，姓名，
+部门编号，入职日期。
+create or replace view v_emp_02 (v_empno,v_ename,v_deptno,v_hiredate)
+       as (select empno,ename,d.deptno,hiredate
+           from emp e ,dept d
+           where e.deptno = d.deptno
+           and loc in ('NEW YORK','CHICAGO'))
+           
+2.创建一个视图，通过该视图可以查询到每个部门的部门名称及最低工资。
+create or replace view  v_emp_03
+       as (select d.dname,e.minsal from
+                  (select deptno,min(sal) minsal
+                   from emp group by deptno) e,dept d
+                   where e.deptno = d.deptno)
+      
+3.通过如上视图，查询每个部门工资最低的员工姓名及部门名称
+select e.ename,d.dname
+from emp e, v_emp_03 v,dept d
+where e.deptno = d.deptno and d.dname = v.dname
+and e.sal = v.minsal
+
+--------课后作业
+1.创建视图v_emp_20，包含20号部门的员工编号，姓名，年薪列(年薪=12*(工资+奖金）；
+create view v_emp_20
+       as (select empno 员工编号,ename 姓名, (sal+nvl(comm,0))*12 年薪
+           from emp where deptno = 20
+       )
+
+2.从视图v_emp_20中查询年薪大于1万元员工的信息；
+select * from v_emp_20 where 年薪 > 10000
+
+3.请为工资大于2000的员工创建视图，要求显示员工的部门信息，职位信息，工作地点；
+create view v_emp_21
+       as (select d.dname,e.job,d.loc
+           from emp e,dept d
+           where e.deptno = d.deptno and sal > 2000)
+
+4.针对以上视图执行insert,update,delete,语句能否成功，为什么？
+select * from v_emp_21
+
+insert into v_emp_21 values('SALES','BOSS','dongruan')
+insert 不能成功，因为子查询有表达式定义的列
+
+update v_emp_21 set job = 'BOSS' where dname = 'SALES'
+UPDATE 能成功
+
+delete from v_emp_21 where job = 'BOSS'
+delete 能成功
+
+
+
+

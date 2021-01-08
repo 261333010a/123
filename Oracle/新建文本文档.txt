@@ -1,0 +1,17 @@
+sqlplus/as sysdba(超级权限)
+
+alter user scott account unlock;（解锁scott）
+
+alter user scott identified by 123456;(修改密码)
+
+连接数据库
+sqlplus scott/123456@数据库名；
+
+已经连上了，想切换账号
+conn scott/123456;
+
+断开连接
+disc;
+
+
+
